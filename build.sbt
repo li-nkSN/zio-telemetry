@@ -1,15 +1,14 @@
 import MimaSettings.mimaSettings
 import ch.epfl.scala.sbtmissinglink.MissingLinkPlugin.missinglinkConflictsTag
-import zio.sbt.githubactions.Step.SingleStep
 
-enablePlugins(ZioSbtEcosystemPlugin, ZioSbtCiPlugin)
+enablePlugins(ZioSbtEcosystemPlugin)
 
 inThisBuild(
   List(
     name              := "ZIO Telemetry",
-    organization      := "dev.zio",
+    organization      := "org.li-nk.telemetry",
     zioVersion        := "2.1.17",
-    homepage          := Some(url("https://zio.dev/zio-telemetry/")),
+    homepage          := Some(url("https://github.com/li-nkSN/zio-telemetry")),
     licenses          := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
     developers        := List(
       Developer(
@@ -29,38 +28,18 @@ inThisBuild(
         "Michael Nedokushev",
         "michael.nedokushev@gmail.com",
         url("https://github.com/grouzen")
+      ),
+      Developer(
+        "li-nkSN",
+        "Colin K. Williams",
+        "colin@li-nk.org",
+        url("https://github.com/li-nkSN")
       )
     ),
-    ciEnabledBranches := Seq("series/2.x", "v4.0.0-rc"),
-    ciCheckArtifactsBuildSteps ++= Seq(
-      SingleStep(
-        name = "Compile examples",
-        run = Some("sbt compileExamples")
-      ),
-      SingleStep(
-        name = "Mima check",
-        run = Some("sbt mimaChecks")
-      ),
-      SingleStep(
-        name = "Undeclared dependencies check",
-        run = Some("sbt undeclaredCompileDependencies")
-      ),
-      SingleStep(
-        name = "Unused dependencies check",
-        run = Some("sbt unusedCompileDependenciesTest")
-      ),
-      SingleStep(
-        name = "MissingLink",
-        run = Some("sbt missinglinkCheck")
-      )
-    ),
-    pgpPassphrase     := sys.env.get("PGP_PASSWORD").map(_.toArray),
-    pgpPublicRing     := file("/tmp/public.asc"),
-    pgpSecretRing     := file("/tmp/secret.asc"),
     scmInfo           := Some(
       ScmInfo(
-        url("https://github.com/zio/zio-telemetry/"),
-        "scm:git:git@github.com:zio/zio-telemetry.git"
+        url("https://github.com/li-nkSN/zio-telemetry/"),
+        "scm:git:git@github.com:li-nkSN/zio-telemetry.git"
       )
     ),
     concurrentRestrictions += Tags.limit(missinglinkConflictsTag, 1),
@@ -75,7 +54,7 @@ Global / onChangedBuildSource := ReloadOnSourceChanges
 
 addCommandAlias("check", "ciCheck;docsCheck")
 addCommandAlias("ciCheck", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")
-addCommandAlias("docsCheck", "docs/checkReadme;docs/ciCheckGithubWorkflow")
+addCommandAlias("docsCheck", "docs/checkReadme")
 addCommandAlias(
   "compileExamples",
   "opentracingExample/compile;opentelemetryExample/compile;opentelemetryInstrumentationExample/compile"
