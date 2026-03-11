@@ -7,6 +7,8 @@ sealed trait ContextStorage {
 
   def get(implicit trace: Trace): UIO[Context]
 
+  def set(ctx: Context)(implicit trace: Trace): UIO[Unit]
+
   def locally[R, E, A](ctx: Context)(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
   def locallyScoped(ctx: Context)(implicit trace: Trace): ZIO[Scope, Nothing, Unit]
@@ -25,6 +27,9 @@ private[opentelemetry] object ContextStorage {
     override def get(implicit trace: Trace): UIO[Context] =
       ref.get
 
+    override def set(context: Context)(implicit trace: Trace): UIO[Unit] =
+      ref.set(context)
+
     override def locally[R, E, A](context: Context)(zio: => ZIO[R, E, A])(implicit
       trace: Trace
     ): ZIO[R, E, A] =
@@ -42,6 +47,9 @@ private[opentelemetry] object ContextStorage {
 
     override def get(implicit trace: Trace): UIO[Context] =
       ZIO.succeed(Context.current())
+
+    override def set(ctx: Context)(implicit trace: Trace): UIO[Unit] =
+      ZIO.succeed(ctx.makeCurrent()).unit
 
     override def locally[R, E, A](ctx: Context)(zio: => ZIO[R, E, A])(implicit
       trace: Trace

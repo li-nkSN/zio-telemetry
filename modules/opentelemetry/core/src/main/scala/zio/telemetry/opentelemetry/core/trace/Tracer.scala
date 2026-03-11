@@ -113,6 +113,30 @@ trait Tracer { self =>
   )(implicit trace: Trace): ZIO[Any, Nothing, Span]
 
   /**
+   * Starts a child span and pushes its context, returning the span and a finalizer that ends
+   * the span and restores the parent context.
+   *
+   * Unlike `span` (callback-based) or `spanScoped` (Scope-based), this returns the span and
+   * finalizer as values, enabling use with `ZQuery.acquireReleaseWith` where acquire and release
+   * must be separate effects.
+   *
+   * The caller is responsible for calling the returned finalizer.
+   *
+   * @param spanName
+   *   name of the child span
+   * @param spanKind
+   *   kind of the child span
+   * @return
+   *   (span, endEffect) where endEffect ends the span and restores parent context
+   */
+  def spanUnsafe(
+    spanName: String,
+    spanKind: SpanKind = SpanKind.INTERNAL,
+    attributes: Attributes = Attributes.empty(),
+    links: Seq[SpanContext] = Seq.empty
+  )(implicit trace: Trace): ZIO[Any, Nothing, (Span, UIO[Unit])]
+
+  /**
    * Mark this effect as the child of an externally provided span. Ends the span when the effect finishes.
    * zio-opentelemetry will mark the span as being the child of the external one.
    *
@@ -319,6 +343,19 @@ private[opentelemetry] object Tracer {
           (span, ctx) = childSpan
           _          <- ZIO.scoped[Any](ctxStorage.locallyScoped(ctx))
         } yield span
+
+      override def spanUnsafe(
+        spanName: String,
+        spanKind: SpanKind = SpanKind.INTERNAL,
+        attributes: Attributes = Attributes.empty(),
+        links: Seq[SpanContext] = Seq.empty
+      )(implicit trace: Trace): ZIO[Any, Nothing, (Span, UIO[Unit])] =
+        for {
+          parentCtx  <- ctxStorage.get
+          childSpan  <- startChild(parentCtx, spanName, spanKind, attributes, links)
+          (span, ctx) = childSpan
+          _          <- ctxStorage.set(ctx)
+        } yield (span, endSpan(span) *> ctxStorage.set(parentCtx))
 
       override def continueSpan[R, E, E1 <: E, A, A1 <: A](
         span: Span,
