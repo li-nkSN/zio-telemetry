@@ -140,6 +140,7 @@ lazy val opentelemetry: Project =
       )
     )
     .settings(libraryDependencies ++= Dependencies.opentelemetry)
+    .settings(libraryDependencies += "dev.zio" %% "zio-query" % "0.7.7" % Test)
     .settings(mimaSettings(failOnProblem = true))
     .settings(unusedCompileDependenciesFilter -= moduleFilter("org.scala-lang.modules", "scala-collection-compat"))
     .dependsOn(opentelemetryCore, opentelemetryTestkit % Test)
